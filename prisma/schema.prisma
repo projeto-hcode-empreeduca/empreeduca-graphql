@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Address {
+  id         Int      @id @default(autoincrement()) @db.UnsignedInt
+  street     String   @db.VarChar(255)
+  zipCode    String   @db.Char(8)
+  number     String   @db.VarChar(7)
+  complement String?  @db.VarChar(127)
+  district   String   @db.VarChar(127)
+  cityId     Int
+  createdAt  DateTime @default(now()) @db.Timestamp(0)
+  updatedAt  DateTime @default(now()) @db.Timestamp(0)
+  city       City     @relation(fields: [cityId], references: [id])
+
+  @@index([cityId], name: "FK_addresses_cities")
+  @@map("addresses")
+}
+
+model Branche {
+  id          Int    @id @default(autoincrement())
+  name        String @db.VarChar(45)
+  stateId     Int    @db.UnsignedInt
+  users_total Int?
+  state       State  @relation(fields: [stateId], references: [id])
+  User        User[]
+
+  @@index([stateId], name: "FK_branches_states")
+  @@map("branches")
+}
+
+model City {
+  id        Int       @id @default(autoincrement())
+  name      String    @db.VarChar(31)
+  stateId   Int       @db.UnsignedInt
+  createdAt DateTime  @default(now()) @db.Timestamp(0)
+  updatedAt DateTime  @default(now()) @db.Timestamp(0)
+  state     State     @relation(fields: [stateId], references: [id])
+  Address   Address[]
+
+  @@index([stateId], name: "FK_cities_states")
+  @@map("cities")
+}
+
+model Coin {
+  id        Int        @id @default(autoincrement()) @db.UnsignedInt
+  name      String     @db.VarChar(63)
+  code      String     @db.Char(3)
+  createdAt DateTime   @default(now()) @db.Timestamp(0)
+  updatedAt DateTime   @default(now()) @db.Timestamp(0)
+  Employee  Employee[]
+
+  @@map("coins")
+}
+
+model Employee {
+  id         Int       @id @default(autoincrement())
+  personId   Int       @db.UnsignedInt
+  salary     Decimal   @db.Decimal(10, 2)
+  totalSales Int?
+  coinId     Int       @default(1) @db.UnsignedInt
+  ruleId     Int       @db.UnsignedInt
+  startAt    DateTime  @db.Date
+  endAt      DateTime? @db.Date
+  cpf        String    @db.Char(11)
+  phone      String    @db.Char(13)
+  birthAt    DateTime  @db.Date
+  yearsOld   Int       @db.TinyInt
+  createdAt  DateTime  @default(now()) @db.Timestamp(0)
+  updatedAt  DateTime  @default(now()) @db.Timestamp(0)
+
+  coin         Coin           @relation(fields: [coinId], references: [id])
+  person       Person         @relation(fields: [personId], references: [id])
+  rule         Rule           @relation(fields: [ruleId], references: [id])
+  EmployeeSale EmployeeSale[]
+
+  @@index([personId], name: "FK_employees_people")
+  @@index([coinId], name: "coinId")
+  @@index([ruleId], name: "ruleId")
+  @@map("employees")
+}
+
+model EmployeeSale {
+  employeeId Int
+  saleId     Int      @unique
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  sale       Sale     @relation(fields: [saleId], references: [id])
+
+  @@id([employeeId, saleId])
+  @@map("employeessales")
+}
+
+model Movie {
+  id            Int           @id @default(autoincrement())
+  name          String        @db.VarChar(200)
+  categoryId    Int
+  movieCategory MovieCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([categoryId], name: "FK_movies_moviescategories")
+  @@map("movies")
+}
+
+model MovieCategory {
+  id    Int     @id @default(autoincrement())
+  name  String  @db.VarChar(256)
+  Movie Movie[]
+
+  @@map("moviescategories")
+}
+
+model Person {
+  id        Int        @id @default(autoincrement()) @db.UnsignedInt
+  name      String     @db.VarChar(45)
+  createdAt DateTime   @default(now()) @db.Timestamp(0)
+  updatedAt DateTime   @default(now()) @db.Timestamp(0)
+  Employee  Employee[]
+  User      User[]
+
+  @@map("people")
+}
+
+model Permission {
+  id             Int              @id @default(autoincrement())
+  name           String           @db.VarChar(45)
+  description    String?          @db.VarChar(45)
+  createdAt      DateTime         @default(now()) @db.Timestamp(0)
+  updatedAt      DateTime         @default(now()) @db.Timestamp(0)
+  UserPermission UserPermission[]
+
+  @@map("permissions")
+}
+
+model Rule {
+  id        Int        @id @default(autoincrement()) @db.UnsignedInt
+  name      String     @db.VarChar(127)
+  createdAt DateTime   @default(now()) @db.Timestamp(0)
+  updatedAt DateTime   @default(now()) @db.Timestamp(0)
+  Employee  Employee[]
+
+  @@map("rules")
+}
+
+model Sale {
+  id           Int           @id @default(autoincrement())
+  description  String        @db.VarChar(256)
+  amount       Decimal       @db.Decimal(10, 2)
+  createdAt    DateTime      @default(now()) @db.Timestamp(0)
+  updatedAt    DateTime      @default(now()) @db.Timestamp(0)
+  employeeSale EmployeeSale?
+
+  @@map("sales")
+}
+
+model State {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  name      String    @db.VarChar(31)
+  uf        String?   @db.Char(2)
+  createdAt DateTime  @default(now()) @db.Timestamp(0)
+  updatedAt DateTime  @default(now()) @db.Timestamp(0)
+  Branche   Branche[]
+  City      City[]
+
+  @@map("states")
+}
+
+model User {
+  id             Int              @id @default(autoincrement())
+  personId       Int              @db.UnsignedInt
+  branchId       Int?
+  email          String           @unique @db.VarChar(45)
+  password       String           @db.VarChar(255)
+  photo          String?          @db.VarChar(45)
+  createdAt      DateTime         @default(now()) @db.Timestamp(0)
+  updatedAt      DateTime         @default(now()) @db.Timestamp(0)
+  branche        Branche?         @relation(fields: [branchId], references: [id])
+  person         Person           @relation(fields: [personId], references: [id])
+  UserPermission UserPermission[]
+
+  @@index([branchId], name: "FK_users_branches")
+  @@index([personId], name: "FK_users_people")
+  @@map("users")
+}
+
+model UserPermission {
+  userId       Int
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+
+  @@id([userId, permissionId])
+  @@index([permissionId], name: "FK_userspermissions_permissions")
+  @@map("userspermissions")
+}
